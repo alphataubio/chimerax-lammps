@@ -23,19 +23,21 @@
 # === UCSF ChimeraX Copyright ===
 
 from chimerax.core.errors import UserError, LimitationError
+from chimerax.io import open_input
 
-def read_dump(session, file_name, model, format_name, *, replace=True, start=1, step=1, end=None):
+def read_dump(session, path, model, format_name, *, replace=True, start=1, step=1, end=None):
     from numpy import array, float64
 
-    dump = open(file_name, "r")
-    dump.readline()
-    timestep = int(dump.readline().split()[0])
-    dump.readline()
-    num_atoms = int(dump.readline().split()[0])
-    for j in range(4): dump.readline()
+    stream = open_input(path, encoding='UTF-8')
+    stream.readline()
+    timestep = int(stream.readline().split()[0])
+    stream.readline()
+    num_atoms = int(stream.readline().split()[0])
+    for j in range(4): stream.readline()
 
     # eg. ITEM: ATOMS id type mol x y z
-    tokens = dump.readline().split()
+    tokens = stream.readline().split()
+    print("LAMMPS dump format: ", tokens[2:])
     index_id = tokens.index('id')-2
     index_type = tokens.index('type')-2
     index_mol = tokens.index('mol')-2
@@ -53,7 +55,7 @@ def read_dump(session, file_name, model, format_name, *, replace=True, start=1, 
 
       for j in range(num_atoms):
         # FIXME: handle dump format other than id type mol x y z
-        tokens = dump.readline().split()
+        tokens = stream.readline().split()
         id = int(tokens[index_id])
         type = int(tokens[index_type])
         mol = int(tokens[index_mol])
@@ -62,13 +64,13 @@ def read_dump(session, file_name, model, format_name, *, replace=True, start=1, 
 
       coords_list[i].sort(key=lambda atom:atom[0])
       i += 1
-      if dump.readline():
-        for j in range(8): dump.readline()
+      if stream.readline():
+        for j in range(8): stream.readline()
       else:
         done = True
 
     coords = array(coords_list, dtype=float64)[:,:,1:]
-    dump.close()
+    stream.close()
 
     if model.num_atoms != num_atoms:
         raise UserError("Specified structure has %d atoms"

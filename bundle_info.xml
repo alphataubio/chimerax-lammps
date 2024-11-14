@@ -29,8 +29,8 @@
   </Providers>
 
   <Providers manager="open command">
-    <Provider name="data" want_path="true" />
-    <Provider name="dump" want_path="true" />
+    <Provider name="data" want_path="false" />
+    <Provider name="dump" want_path="false" />
   </Providers>
 
   <Classifiers>

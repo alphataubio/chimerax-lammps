@@ -25,6 +25,7 @@
 import traceback
 
 from chimerax.atomic import AtomicStructure, Element
+from chimerax.io import open_input
 
 def determine_element_from_mass(mass, *, consider_hydrogens=True):
     H = Element.get_element('H')
@@ -62,7 +63,7 @@ def determine_element_from_mass(mass, *, consider_hydrogens=True):
             nearest = (element, diff)
     return Element.get_element(nearest[0])
 
-def read_data(session, path, file_name, *, auto_style=True, coords=None, **kw):
+def read_data(session, stream, file_name, *, auto_style=True, coords=None, **kw):
     from chimerax.core.errors import UserError, CancelOperation
     import os
     if coords is None:
@@ -71,7 +72,8 @@ def read_data(session, path, file_name, *, auto_style=True, coords=None, **kw):
             # Don't use a native dialog so that the caption is actually shown;
             # otherwise the dialog is totally mystifying
             coords, types = QFileDialog.getOpenFileName(caption="Specify DUMP file for DATA",
-                directory=os.path.dirname(path), options=QFileDialog.DontUseNativeDialog)
+#                directory=os.path.dirname(path), options=QFileDialog.DontUseNativeDialog)
+                directory=os.path.dirname(os.path.realpath(stream.name)), options=QFileDialog.DontUseNativeDialog)
             if not coords:
                 raise CancelOperation("No coordinates file specified for DATA")
             session.logger.info("Coordinates file: %s" % coords)
@@ -89,13 +91,13 @@ def read_data(session, path, file_name, *, auto_style=True, coords=None, **kw):
         from chimerax.atomic.struct_edit import add_atom, add_bond
         from numpy import array, float64
 
-        data = open(path, "r")
-        data.readline()
-        data.readline()
+        #stream = open_input(path, encoding='UTF-8')
+        stream.readline()
+        stream.readline()
 
         # READ NUMBER OF ATOMS AND BONDS
 
-        line = data.readline()
+        line = stream.readline()
         while line != '\n':
           tokens = line.split()
 
@@ -104,39 +106,39 @@ def read_data(session, path, file_name, *, auto_style=True, coords=None, **kw):
           elif tokens[1] == 'bonds':
             bonds = int(tokens[0])
 
-          line = data.readline()
+          line = stream.readline()
 
-        session.logger.info( f"{atoms} atoms {bonds} bonds")
+        session.logger.info( f"LAMMPS data: {atoms} atoms {bonds} bonds")
 
         # SKIP UNTIL MASSES SECTION
 
-        line = data.readline()
-        while not line.startswith("Masses"): line = data.readline()
-        line = data.readline() # SKIP BLANK LINE
+        line = stream.readline()
+        while not line.startswith("Masses"): line = stream.readline()
+        line = stream.readline() # SKIP BLANK LINE
 
         # PARSE MASSES
 
         masses = {}
 
-        tokens = data.readline().split()
+        tokens = stream.readline().split()
         while tokens and tokens[0].isdigit():
           masses[int(tokens[0])] = float(tokens[1])
-          tokens = data.readline().split()
+          tokens = stream.readline().split()
 
         # print( masses )
 
         # SKIP UNTIL ATOMS SECTION
 
-        line = data.readline()
-        while not line.startswith("Atoms"): line = data.readline()
-        line = data.readline() # SKIP BLANK LINE
+        line = stream.readline()
+        while not line.startswith("Atoms"): line = stream.readline()
+        line = stream.readline() # SKIP BLANK LINE
 
         # PARSE ATOMS
 
         atoms_list = []
         atoms = {}
 
-        tokens = data.readline().split()
+        tokens = stream.readline().split()
         while tokens:
           tag = int(tokens[0])
           mol = int(tokens[1])
@@ -146,7 +148,7 @@ def read_data(session, path, file_name, *, auto_style=True, coords=None, **kw):
           if residue is None: residue = structure.new_residue(str(mol), " ", mol)
           element = determine_element_from_mass(masses[type])
           atoms_list.append([tag, element, residue, xyz])
-          tokens = data.readline().split()
+          tokens = stream.readline().split()
 
         atoms_list.sort(key=lambda atom:atom[0])
 
@@ -155,21 +157,21 @@ def read_data(session, path, file_name, *, auto_style=True, coords=None, **kw):
 
         # SKIP UNTIL BONDS SECTION
 
-        line = data.readline()
-        while not line.startswith("Bonds"): line = data.readline()
-        line = data.readline() # SKIP BLANK LINE
+        line = stream.readline()
+        while not line.startswith("Bonds"): line = stream.readline()
+        line = stream.readline() # SKIP BLANK LINE
 
         # PARSE BONDS
 
-        tokens = data.readline().split()
+        tokens = stream.readline().split()
         while tokens:
           tag1 = int(tokens[2])
           tag2 = int(tokens[3])
           # FIXME: handle tag1 and/or tag2 not found
           add_bond(atoms[tag1], atoms[tag2])
-          tokens = data.readline().split()
+          tokens = stream.readline().split()
 
-        data.close()
+        stream.close()
 
     except Exception as e:
         print(traceback.format_exc())
