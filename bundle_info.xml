@@ -1,12 +1,11 @@
-<BundleInfo name="LAMMPS" version="1.0"
-	    package="chimerax.lammps"
-  	    minSessionVersion="1" maxSessionVersion="1">
+<BundleInfo name="ChimeraX-LAMMPS" version="0.9"
+  package="chimerax.lammps" minSessionVersion="1" maxSessionVersion="1">
 
   <Author>Mitch Murphy</Author>
   <Email>alphataubio@gmail.com</Email>
-  <URL>https://lammps.org/</URL>
+  <URL>https://alphataubio.com/</URL>
 
-  <Synopsis>Molecular dynamics support</Synopsis>
+  <Synopsis>Native LAMMPS .data and .dump importer</Synopsis>
   <Description>This bundle provides parsers for LAMMPS data and dump file formats.</Description>
 
   <Categories>

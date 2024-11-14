@@ -1,15 +1,102 @@
-include ../Makefile.bundle
+# The "make" targets are:
+# 	wheel: build a Python wheel in "dist" directory.
+# 	app-install: build wheel (if needed) and install in ChimeraX.
+# 	test: run ChimeraX
+# 	debug: run ChimeraX with debugging flag set
+# 	clean: remove files used in building wheel
+# 	distclean: remove files used in building wheel and license file
 
-CLEAN_ALWAYS += src/dcd/MDToolsMarch97/__pycache__ \
-		src/dcd/__pycache \
-		src/_gromacs*.$(PYMOD_EXT)
+# These parameters may be changed as needed.
 
-wheel install app-install:	xdrfile_lib
+# ChimeraX bundle names must start with "ChimeraX_"
+# to avoid clashes with package names in pypi.python.org.
+# When uploaded to the ChimeraX toolshed, the bundle
+# will be displayed without the ChimeraX- prefix.
+# BUNDLE_NAME = ChimeraX-Clipper
+# BUNDLE_VERSION = 0.9.4-dev1
+# ChimeraX bundles should only include packages
+# that install as chimerax.package_name.
+# General Python packages should be uploaded to
+# pypi.python.org rather than the ChimeraX toolshed.
+# PKG_NAME = chimerax.clipper
 
-xdrfile_lib:
-	$(MAKE) -C gromacs all
+# Define where ChimeraX is installed.
+OS = $(patsubst CYGWIN_NT%,CYGWIN_NT,$(shell uname -s))
+# CHIMERAX_APP is the ChimeraX install folder
 
-clean:	gromacs_clean
+ifeq ($(OS),CYGWIN_NT)
+ifndef RELEASE
+# Windows
+CHIMERAX_APP = "/c/Program Files/ChimeraX_Daily"
+else
+CHIMERAX_APP = "/c/Program Files/ChimeraX"
+endif
+endif
 
-gromacs_clean:
-	$(MAKE) -C gromacs clean
+ifeq ($(OS),Darwin)
+# Mac
+ifndef RELEASE
+CHIMERAX_APP = /Applications/ChimeraX-1.8.app
+else
+CHIMERAX_APP = /Applications/ChimeraX-1.8.app
+endif
+endif
+
+ifeq ($(OS),Linux)
+ifndef RELEASE
+CHIMERAX_APP = /usr/libexec/ChimeraX-daily
+else
+CHIMERAX_APP = /usr/libexec/ChimeraX
+endif
+endif
+
+# ==================================================================
+# Theoretically, no changes are needed below this line
+
+# Platform-dependent settings.  Should not need fixing.
+# For Windows, we assume Cygwin is being used.
+ifeq ($(OS),CYGWIN_NT)
+CHIMERAX_EXE = $(CHIMERAX_APP)/bin/ChimeraX-console.exe
+endif
+ifeq ($(OS),Darwin)
+CHIMERAX_EXE = $(CHIMERAX_APP)/Contents/bin/ChimeraX
+endif
+ifeq ($(OS),Linux)
+#CHIMERAX_EXE = $(CHIMERAX_APP)/bin/ChimeraX
+# since the install path varies by Linux distro, just do this and hope...
+CHIMERAX_EXE = chimerax
+endif
+
+BUNDLE_BASE_NAME = $(subst ChimeraX-,,$(BUNDLE_NAME))
+SOURCE = src
+SRCS = $(SOURCE)/*.py #$(SOURCE)/*.cpp
+
+
+:DEFAULT_GOAL := wheel
+
+#
+# Actual make dependencies!
+#
+
+wheel $(WHEEL): bundle_info.xml $(SRCS)
+	$(CHIMERAX_EXE) --nogui --cmd "devel build . ; exit"
+
+install app-install:	$(WHEEL)
+	$(CHIMERAX_EXE) --nogui --cmd "devel install . ; exit"
+
+uninstall app-uninstall:	$(WHEEL)
+	$(CHIMERAX_EXE) --nogui --cmd "toolshed uninstall $(BUNDLE_BASE_NAME) ; exit"
+
+docs:
+	$(CHIMERAX_EXE) -m sphinx docs/source src/docs/user
+
+test:
+	$(CHIMERAX_EXE)
+
+debug:
+	$(CHIMERAX_EXE) --debug
+
+clean:
+	$(CHIMERAX_EXE) --nogui --cmd "devel clean . ; exit"
+
+.PHONY: docs
