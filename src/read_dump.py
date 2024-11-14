@@ -32,7 +32,16 @@ def read_dump(session, file_name, model, format_name, *, replace=True, start=1, 
     timestep = int(dump.readline().split()[0])
     dump.readline()
     num_atoms = int(dump.readline().split()[0])
-    for j in range(5): dump.readline()
+    for j in range(4): dump.readline()
+
+    # eg. ITEM: ATOMS id type mol x y z
+    tokens = dump.readline().split()
+    index_id = tokens.index('id')-2
+    index_type = tokens.index('type')-2
+    index_mol = tokens.index('mol')-2
+    index_x = tokens.index('x')-2
+    index_y = tokens.index('y')-2
+    index_z = tokens.index('z')-2
 
     coords_list = []
     done = False
@@ -45,11 +54,11 @@ def read_dump(session, file_name, model, format_name, *, replace=True, start=1, 
       for j in range(num_atoms):
         # FIXME: handle dump format other than id type mol x y z
         tokens = dump.readline().split()
-        tag = int(tokens[0])
-        type = int(tokens[1])
-        mol = int(tokens[2])
-        x,y,z = float(tokens[3]),float(tokens[4]),float(tokens[5])
-        coords_list[i].append([tag,x,y,z])
+        id = int(tokens[index_id])
+        type = int(tokens[index_type])
+        mol = int(tokens[index_mol])
+        x,y,z = float(tokens[index_x]),float(tokens[index_y]),float(tokens[index_z])
+        coords_list[i].append([id,x,y,z])
 
       coords_list[i].sort(key=lambda atom:atom[0])
       i += 1
