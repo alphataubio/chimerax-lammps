@@ -25,7 +25,7 @@
 from chimerax.core.errors import UserError, LimitationError
 from chimerax.io import open_input
 
-def read_dump(session, path, model, format_name, *, replace=True, start=1, step=1, end=None):
+def read_dump(session, path, model, replace=True, start=1, step=1, end=None):
     from numpy import array, float64
 
     stream = open_input(path, encoding='UTF-8')

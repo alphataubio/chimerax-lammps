@@ -72,7 +72,6 @@ def read_data(session, stream, file_name, *, auto_style=True, coords=None, **kw)
             # Don't use a native dialog so that the caption is actually shown;
             # otherwise the dialog is totally mystifying
             coords, types = QFileDialog.getOpenFileName(caption="Specify DUMP file for DATA",
-#                directory=os.path.dirname(path), options=QFileDialog.DontUseNativeDialog)
                 directory=os.path.dirname(os.path.realpath(stream.name)), options=QFileDialog.DontUseNativeDialog)
             if not coords:
                 raise CancelOperation("No coordinates file specified for DATA")
@@ -91,7 +90,6 @@ def read_data(session, stream, file_name, *, auto_style=True, coords=None, **kw)
         from chimerax.atomic.struct_edit import add_atom, add_bond
         from numpy import array, float64
 
-        #stream = open_input(path, encoding='UTF-8')
         stream.readline()
         stream.readline()
 
@@ -124,8 +122,6 @@ def read_data(session, stream, file_name, *, auto_style=True, coords=None, **kw)
         while tokens and tokens[0].isdigit():
           masses[int(tokens[0])] = float(tokens[1])
           tokens = stream.readline().split()
-
-        # print( masses )
 
         # SKIP UNTIL ATOMS SECTION
 
@@ -175,8 +171,8 @@ def read_data(session, stream, file_name, *, auto_style=True, coords=None, **kw)
 
     except Exception as e:
         print(traceback.format_exc())
-        raise UserError("Problem reading/processing DATA file '%s': %s" % (path, e))
+        raise UserError("Problem reading/processing DATA file '%s': %s" % (os.path.realpath(stream.name), e))
 
     from .read_dump import read_dump
-    read_dump(session, coords, structure, data_fmt.nicknames[0], replace=True, **kw)
+    read_dump(session, coords, structure, replace=True, **kw)
     return [structure], ""

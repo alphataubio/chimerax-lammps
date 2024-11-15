@@ -1,4 +1,4 @@
-<BundleInfo name="ChimeraX-LAMMPS" version="0.9"
+<BundleInfo name="ChimeraX-LAMMPS" version="0.9.2"
   package="chimerax.lammps" minSessionVersion="1" maxSessionVersion="1">
 
   <Author>Mitch Murphy</Author>
